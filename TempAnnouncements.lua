@@ -18,7 +18,7 @@
 -- GM GUIDE:     -  Use .tempannounce $limit $delay $text to do repeated server wide announcements.
 --               -  $limit is the amount of broadcasts. 0 means until server restart or reload eluna.
 --               -  $delay is the time between each repetition in minutes.
---               -  $text Is the exacht text to broacast. No quotes required.
+--               -  $text Is the exacht text to broacast. No quotes required. Forbidden chars: [];\
 ------------------------------------------------------------------------------------------------
 local Config = {}                       --general config flags
 
@@ -91,7 +91,7 @@ local function eS_command(event, player, command)
         if commandArray[3] ~= nil then
             commandArray[3] = commandArray[3]:gsub("[';\\, ]", "")
             if commandArray[4] ~= nil then
-                commandArray[4] = commandArray[4]:gsub("[';\\, ]", "")
+                commandArray[4] = commandArray[4]:gsub("[;\\]", "")
             end
         end
     end
@@ -151,3 +151,5 @@ if Data_SQL ~= nil then
         minutesBetween[id] = Data_SQL:GetString(4)
     until not Data_SQL:NextRow()
 end
+
+-- todo: create events for existing announcements

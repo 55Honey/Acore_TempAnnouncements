@@ -22,7 +22,7 @@ Use `.tempannounce $limit $delay $text` to do repeated server wide announcements
 
 `$delay` is the time between each repetition in minutes.
 
-`$text` Is the exacht text to broacast. No quotes required.
+`$text` Is the exacht text to broacast. No quotes required. Forbidden chars: [];\
 
 ## As an example:
 `.tempannounce 0 15 Hello players, we love you!`
