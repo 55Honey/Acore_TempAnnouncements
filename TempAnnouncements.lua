@@ -66,6 +66,10 @@ local function eS_listAnnoucnements()
     return returnString
 end
 
+local function eS_deleteAnnouncement()
+    --todo: delete announcement entry variables and delete it from db, too
+end
+
 local function eS_createAnnouncement()
     -- todo: register event and write it to db
 end
@@ -109,7 +113,7 @@ local function eS_command(event, player, command)
 
         if commandArray[2] == "delete" then
             if commandArray[3] ~= nil then
-                --todo: check if the announcement exists and delete it
+                eS_deleteAnnouncement()
             else
                 if player == nil then
                     print("Invalid syntax. Expected: .tempannounce delete $id")
@@ -148,7 +152,7 @@ if Data_SQL ~= nil then
         lastAnnouncement[id] = Data_SQL:GetUInt32(1)
         repetitionsLeft[id] = Data_SQL:GetUInt32(2)
         minutesBetween[id] = Data_SQL:GetUInt32(3)
-        minutesBetween[id] = Data_SQL:GetString(4)
+        announcementText[id] = Data_SQL:GetString(4)
     until not Data_SQL:NextRow()
 end
 
