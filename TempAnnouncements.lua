@@ -22,6 +22,8 @@
 ------------------------------------------------------------------------------------------------
 local Config = {}                       --general config flags
 
+-- Name of Eluna dB scheme
+Config.customDbName = "ac_eluna"
 -- Min GM rank to post an announcement
 Config.GMRankForEventStart = 2
 -- set to 1 to print error messages to the console. Any other value including nil turns it off.
@@ -38,8 +40,9 @@ local OPTION_ICON_CHAT = 0
 
 -- Local variables:
 local lastAnnouncement = {}                 -- server timestamp when the last announcement happened
+local repetitionsLeft = {}                  -- amount of repetitions left for the announcements
+local minutesBetween = {}                   -- time between two announcements with the same text in minutes
 local announcementText = {}                 -- text for the announcements
-local repetitionsLeft = {}                  -- repetitions left for the announcements
 
 local function eS_splitString(inputstr, seperator)
     if seperator == nil then
@@ -50,6 +53,25 @@ local function eS_splitString(inputstr, seperator)
         table.insert(t, str)
     end
     return t
+end
+
+local function eS_getTimeSince(time)
+    local dt = GetTimeDiff(time)
+    return dt
+end
+
+local function eS_listAnnoucnements()
+    local returnString
+    --todo: list all currently active announcements
+    return returnString
+end
+
+local function eS_createAnnouncement()
+    -- todo: register event and write it to db
+end
+
+local function eS_doAnnouncement()
+    -- todo: send the announcement, reduce the counter repetitionsLeft by 1, possibly delete it and update the db
 end
 
 local function eS_command(event, player, command)
@@ -76,7 +98,26 @@ local function eS_command(event, player, command)
 
     if commandArray[1] == "tempannounce" then
         if commandArray[2] == "print" then
-            --todo: print all active announcements
+            local listOfAnnouncements = eS_listAnnoucnements()
+            if player == nil then
+                print(listOfAnnouncements)
+            else
+                player:SendBroadcastMessage(listOfAnnouncements)
+            end
+            return false
+        end
+
+        if commandArray[2] == "delete" then
+            if commandArray[3] ~= nil then
+                --todo: check if the announcement exists and delete it
+            else
+                if player == nil then
+                    print("Invalid syntax. Expected: .tempannounce delete $id")
+                else
+                    player:SendBroadcastMessage("Invalid syntax. Expected: .tempannounce delete $id")
+                end
+            end
+            return false
         end
         
         if commandArray[2] == nil or commandArray[3] == nil or commandArray[4] == nil then
@@ -87,11 +128,26 @@ local function eS_command(event, player, command)
             end
             return false
         end
-        
-        -- todo: do something
+
+        eS_createAnnouncement()
         
     end
 end
 
 --on ReloadEluna / Startup
 RegisterPlayerEvent(PLAYER_EVENT_ON_COMMAND, eS_command)
+
+CharDBQuery('CREATE DATABASE IF NOT EXISTS `'..Config.customDbName..'`;');
+CharDBQuery('CREATE TABLE IF NOT EXISTS `'..Config.customDbName..'`.`temporary_announcements` (`id` INT NOT NULL, `last_announcement` INT NOT NULL, `repetitions_left` INT DEFAULT 0, `minutes_between` INT Default 60, `announcement_text` varchar(255), PRIMARY KEY (`id`));');
+
+local Data_SQL = CharDBQuery('SELECT * FROM `'..Config.customDbName..'`.`temporary_announcements`;')
+if Data_SQL ~= nil then
+    local id
+    repeat
+        id = Data_SQL:GetUInt32(0)
+        lastAnnouncement[id] = Data_SQL:GetUInt32(1)
+        repetitionsLeft[id] = Data_SQL:GetUInt32(2)
+        minutesBetween[id] = Data_SQL:GetUInt32(3)
+        minutesBetween[id] = Data_SQL:GetString(4)
+    until not Data_SQL:NextRow()
+end
