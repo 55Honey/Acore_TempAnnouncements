@@ -25,7 +25,7 @@ local Config = {}                       --general config flags
 -- Name of Eluna dB scheme
 Config.customDbName = "ac_eluna"
 -- Min GM rank to post an announcement
-Config.GMRankForEventStart = 2
+Config.GMRankForAnnouncements = 2
 -- set to 1 to print error messages to the console. Any other value including nil turns it off.
 Config.printErrorsToConsole = 1
 
@@ -60,9 +60,23 @@ local function eS_getTimeSince(time)
     return dt
 end
 
+local function eS_getFreeId()
+    local n = 1
+    while repetitionsLeft[n] == nil do
+        n = n + 1
+    end
+    return n
+end
+
 local function eS_listAnnoucnements()
-    local returnString
-    --todo: list all currently active announcements
+    local returnString = ""
+    local n = 0
+    while n < #repetitionsLeft do
+        if repetitionsLeft[n] ~= nil then
+            n = n + 1
+            returnString = returnString.." / ID:"..n.." delay: "..minutesBetween[n].." shots left: "..repetitionsLeft.." Text: "..announcementText
+        end
+    end
     return returnString
 end
 
@@ -70,7 +84,7 @@ local function eS_deleteAnnouncement()
     --todo: delete announcement entry variables and delete it from db, too
 end
 
-local function eS_createAnnouncement()
+local function eS_createAnnouncement(delayMin, text, repetitions)
     -- todo: register event and write it to db
 end
 
@@ -82,7 +96,7 @@ local function eS_command(event, player, command)
     local commandArray = {}
 
     --prevent players from using this  
-    if player:GetGMRank() < Config.GMRankForEventStart then
+    if player:GetGMRank() < Config.GMRankForAnnouncements then
         return
     end
     
@@ -93,7 +107,7 @@ local function eS_command(event, player, command)
     if commandArray[2] ~= nil then
         commandArray[2] = commandArray[2]:gsub("[';\\, ]", "")
         if commandArray[3] ~= nil then
-            commandArray[3] = commandArray[3]:gsub("[';\\, ]", "")
+            commandArray[3] = commandArray[3]:gsub("[';]", "")
             if commandArray[4] ~= nil then
                 commandArray[4] = commandArray[4]:gsub("[;\\]", "")
             end
@@ -109,9 +123,7 @@ local function eS_command(event, player, command)
                 player:SendBroadcastMessage(listOfAnnouncements)
             end
             return false
-        end
-
-        if commandArray[2] == "delete" then
+        elseif commandArray[2] == "delete" then
             if commandArray[3] ~= nil then
                 eS_deleteAnnouncement()
             else
@@ -122,18 +134,16 @@ local function eS_command(event, player, command)
                 end
             end
             return false
-        end
-        
-        if commandArray[2] == nil or commandArray[3] == nil or commandArray[4] == nil then
+        elseif commandArray[2] == nil or commandArray[3] == nil or commandArray[4] == nil then
             if player == nil then
-                print("Invalid syntax. Expected: .tempannounce $limit $delay $text")
+                print("Invalid syntax. Expected: tempannounce $delay $text $repetitions")
             else
-                player:SendBroadcastMessage("Invalid syntax. Expected: .tempannounce $limit $delay $text")
+                player:SendBroadcastMessage("Invalid syntax. Expected: .tempannounce $delay $text $repetitions")
             end
             return false
         end
 
-        eS_createAnnouncement()
+        eS_createAnnouncement(commandArray[2],commandArray[3],commandArray[4])
         
     end
 end
