@@ -68,7 +68,7 @@ local function eS_getFreeId()
     return n
 end
 
-local function eS_listAnnoucnements()
+local function eS_listAnnouncements()
     local returnString = ""
     local n = 0
     while n < #repetitionsLeft do
@@ -116,7 +116,7 @@ local function eS_command(event, player, command)
 
     if commandArray[1] == "tempannounce" then
         if commandArray[2] == "print" then
-            local listOfAnnouncements = eS_listAnnoucnements()
+            local listOfAnnouncements = eS_listAnnouncements()
             if player == nil then
                 print(listOfAnnouncements)
             else
