@@ -39,10 +39,10 @@ local GOSSIP_EVENT_ON_SELECT = 2            -- (event, player, object, sender, i
 local OPTION_ICON_CHAT = 0
 
 -- Local variables:
-local lastAnnouncement = {}                 -- server timestamp when the last announcement happened
 local repetitionsLeft = {}                  -- amount of repetitions left for the announcements
 local minutesBetween = {}                   -- time between two announcements with the same text in minutes
 local announcementText = {}                 -- text for the announcements
+local eventId = {}
 
 local function eS_splitString(inputstr, seperator)
     if seperator == nil then
@@ -53,6 +53,15 @@ local function eS_splitString(inputstr, seperator)
         table.insert(t, str)
     end
     return t
+end
+
+local function eS_returnIndex (tab, val)
+    for index, value in ipairs(tab) do
+        if value == val then
+            return index
+        end
+    end
+    return false
 end
 
 local function eS_getTimeSince(time)
@@ -68,6 +77,23 @@ local function eS_getFreeId()
     return n
 end
 
+local function eS_concatRest(array, firstIndex)
+    if array[firstIndex] ~= nil then
+        local counter
+        for index,value in ipairs(array) do
+            if index >= firstIndex then
+                if text == nil then
+                    text = array[index].." "
+                else
+                    text = text..array[index].." "
+                end
+            end
+        end
+    else
+        text = ""
+    end
+end
+
 local function eS_listAnnouncements()
     local returnString = ""
     local n = 0
@@ -80,16 +106,37 @@ local function eS_listAnnouncements()
     return returnString
 end
 
-local function eS_deleteAnnouncement()
-    --todo: delete announcement entry variables and delete it from db, too
+local function eS_deleteAnnouncement(id)
+    if minutesBetween[id] ~= nil then
+        repetitionsLeft[index] = nil
+        minutesBetween[index] = nil
+        announcementText[index] = nil
+        eventId[index] = nil
+        CharDBExecute('DELETE FROM `'..Config.customDbName..'`.`temporary_announcements` WHERE `id` = '..id..';')
+    end
 end
 
-local function eS_createAnnouncement(delayMin, text, repetitions)
-    -- todo: register event and write it to db
+local function eS_doAnnouncement(id, delay, repeats)
+    local index = eS_returnIndex(eventId, id)
+    SendWorldMessage(announcementText[index])
+    if repetitionsLeft[index] == 1 then
+        eS_deleteAnnouncement(index)
+    else
+        repetitionsLeft[index] = repetitionsLeft[index] - 1
+        CharDBExecute('UPDATE `'..Config.customDbName..'`.`temporary_announcements` SET repetitions_left = '..repetitionsLeft[index]..';')
+    end
 end
 
-local function eS_doAnnouncement()
-    -- todo: send the announcement, reduce the counter repetitionsLeft by 1, possibly delete it and update the db
+local function eS_createAnnouncement(delayMin, repeats, text)
+    local index = eS_getFreeId()
+    local delayMs = delayMin * 60000
+    repetitionsLeft[index] = repeats
+    minutesBetween[index] = delayMin
+    announcementText[index] = text
+    eventId[index] = CreateLuaEvent(eS_doAnnouncement, delayMs, repeats)
+    CharDBExecute('DELETE FROM `'..Config.customDbName..'`.`temporary_announcements` WHERE `id` = '..index..';')
+    CharDBExecute('INSERT INTO `'..Config.customDbName..'`.`temporary_announcements` (`id`, `repetitions_left`, `minutes_between`, `announcement_text`) VALUES ('..index..', '..repetitionsLeft[index]..', '..minutesBetween[index]..', '..announcementText[index]..';')
+    return index
 end
 
 local function eS_command(event, player, command)
@@ -125,7 +172,11 @@ local function eS_command(event, player, command)
             return false
         elseif commandArray[2] == "delete" then
             if commandArray[3] ~= nil then
-                eS_deleteAnnouncement()
+                if player == nil then
+                    print("Deleting event with id: "..eS_deleteAnnouncement(commandArray[3]))
+                else
+                    player:SendBroadcastMessage("Deleting event with id: "..eS_deleteAnnouncement(commandArray[3]))
+                end
             else
                 if player == nil then
                     print("Invalid syntax. Expected: .tempannounce delete $id")
@@ -136,14 +187,20 @@ local function eS_command(event, player, command)
             return false
         elseif commandArray[2] == nil or commandArray[3] == nil or commandArray[4] == nil then
             if player == nil then
-                print("Invalid syntax. Expected: tempannounce $delay $text $repetitions")
+                print("Invalid syntax. Expected: tempannounce $delay $repetitions $text")
             else
-                player:SendBroadcastMessage("Invalid syntax. Expected: .tempannounce $delay $text $repetitions")
+                player:SendBroadcastMessage("Invalid syntax. Expected: tempannounce $delay $repetitions $text")
             end
             return false
         end
 
-        eS_createAnnouncement(commandArray[2],commandArray[3],commandArray[4])
+        local text = eS_concatRest(commandArray, 4)
+
+        if player == nil then
+            print("Creating event with id: "..eS_createAnnouncement(commandArray[2],commandArray[3],text))
+        else
+            player:SendBroadcastMessage("Creating event with id: "..eS_createAnnouncement(commandArray[2],commandArray[3],text))
+        end
         
     end
 end
@@ -152,18 +209,16 @@ end
 RegisterPlayerEvent(PLAYER_EVENT_ON_COMMAND, eS_command)
 
 CharDBQuery('CREATE DATABASE IF NOT EXISTS `'..Config.customDbName..'`;');
-CharDBQuery('CREATE TABLE IF NOT EXISTS `'..Config.customDbName..'`.`temporary_announcements` (`id` INT NOT NULL, `last_announcement` INT NOT NULL, `repetitions_left` INT DEFAULT 0, `minutes_between` INT Default 60, `announcement_text` varchar(255), PRIMARY KEY (`id`));');
+CharDBQuery('CREATE TABLE IF NOT EXISTS `'..Config.customDbName..'`.`temporary_announcements` (`id` INT NOT NULL, `repetitions_left` INT DEFAULT 0, `minutes_between` INT Default 60, `announcement_text` varchar(255), PRIMARY KEY (`id`));');
 
 local Data_SQL = CharDBQuery('SELECT * FROM `'..Config.customDbName..'`.`temporary_announcements`;')
 if Data_SQL ~= nil then
     local id
     repeat
         id = Data_SQL:GetUInt32(0)
-        lastAnnouncement[id] = Data_SQL:GetUInt32(1)
-        repetitionsLeft[id] = Data_SQL:GetUInt32(2)
-        minutesBetween[id] = Data_SQL:GetUInt32(3)
-        announcementText[id] = Data_SQL:GetString(4)
-    until not Data_SQL:NextRow()
+        repetitionsLeft[id] = Data_SQL:GetUInt32(1)
+        minutesBetween[id] = Data_SQL:GetUInt32(2)
+        announcementText[id] = Data_SQL:GetString(3)
+        eS_createAnnouncement(minutesBetween[id], repetitionsLeft[id], announcementText[id])
+        until not Data_SQL:NextRow()
 end
-
--- todo: create events for existing announcements
