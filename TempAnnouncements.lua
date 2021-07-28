@@ -135,7 +135,7 @@ local function eS_createAnnouncement(delayMin, repeats, text)
     announcementText[index] = text
     eventId[index] = CreateLuaEvent(eS_doAnnouncement, delayMs, repeats)
     CharDBExecute('DELETE FROM `'..Config.customDbName..'`.`temporary_announcements` WHERE `id` = '..index..';')
-    CharDBExecute('INSERT INTO `'..Config.customDbName..'`.`temporary_announcements` (`id`, `repetitions_left`, `minutes_between`, `announcement_text`) VALUES ('..index..', '..repetitionsLeft[index]..', '..minutesBetween[index]..', '..announcementText[index]..';')
+    CharDBExecute('INSERT INTO `'..Config.customDbName..'`.`temporary_announcements` (`id`, `repetitions_left`, `minutes_between`, `announcement_text`) VALUES ('..index..', '..repetitionsLeft[index]..', '..minutesBetween[index]..', "'..announcementText[index]..'");')
     return index
 end
 
