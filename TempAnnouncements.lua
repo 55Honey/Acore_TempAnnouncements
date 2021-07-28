@@ -15,10 +15,10 @@
 --               -  adjust config in this file
 --               -  add this script to ../lua_scripts/
 ------------------------------------------------------------------------------------------------
--- GM GUIDE:     -  Use .tempannounce $limit $delay $text to do repeated server wide announcements.
+-- GM GUIDE:     -  Use .tannounce $limit $delay $text to do repeated server wide announcements.
 --               -  $limit is the amount of broadcasts. 0 means until server restart or reload eluna.
 --               -  $delay is the time between each repetition in minutes.
---               -  $text Is the exacht text to broacast. No quotes required. Forbidden chars: [];\
+--               -  $text Is the exacht text to broacast. No quotes required. Forbidden chars: [';]
 ------------------------------------------------------------------------------------------------
 local Config = {}                       --general config flags
 
@@ -44,7 +44,7 @@ local minutesBetween = {}                   -- time between two announcements wi
 local announcementText = {}                 -- text for the announcements
 local eventId = {}
 
-local function eS_splitString(inputstr, seperator)
+local function tA_splitString(inputstr, seperator)
     if seperator == nil then
         seperator = "%s"
     end
@@ -55,7 +55,7 @@ local function eS_splitString(inputstr, seperator)
     return t
 end
 
-local function eS_returnIndex (tab, val)
+local function tA_returnIndex (tab, val)
     for index, value in ipairs(tab) do
         if value == val then
             return index
@@ -64,106 +64,100 @@ local function eS_returnIndex (tab, val)
     return false
 end
 
-local function eS_getTimeSince(time)
+local function tA_getTimeSince(time)
     local dt = GetTimeDiff(time)
     return dt
 end
 
-local function eS_getFreeId()
+local function tA_getFreeId()
     local n = 1
-    while repetitionsLeft[n] == nil do
+    while repetitionsLeft[n] ~= nil do
         n = n + 1
     end
     return n
 end
 
-local function eS_concatRest(array, firstIndex)
-    if array[firstIndex] ~= nil then
-        local counter
-        for index,value in ipairs(array) do
-            if index >= firstIndex then
-                if text == nil then
-                    text = array[index].." "
-                else
-                    text = text..array[index].." "
-                end
-            end
-        end
-    else
-        text = ""
-    end
-end
-
-local function eS_listAnnouncements()
+local function tA_listAnnouncements()
     local returnString = ""
     local n = 0
-    while n < #repetitionsLeft do
-        if repetitionsLeft[n] ~= nil then
+    if #repetitionsLeft ~= nil and #repetitionsLeft > 0 then
+        while n <= #repetitionsLeft do
             n = n + 1
-            returnString = returnString.." / ID:"..n.." delay: "..minutesBetween[n].." shots left: "..repetitionsLeft.." Text: "..announcementText
+            if repetitionsLeft[n] ~= nil then
+                returnString = returnString.." / ID:"..n.." delay: "..minutesBetween[n].." shots left: "..repetitionsLeft[n].." Text: "..announcementText[n]
+            end
         end
+    end
+    if returnString == "" then
+        returnString = "No announcements scheduled."
     end
     return returnString
 end
 
-local function eS_deleteAnnouncement(id)
+local function tA_deleteAnnouncement(id)
     if minutesBetween[id] ~= nil then
-        repetitionsLeft[index] = nil
-        minutesBetween[index] = nil
-        announcementText[index] = nil
-        eventId[index] = nil
+        repetitionsLeft[id] = nil
+        minutesBetween[id] = nil
+        announcementText[id] = nil
+        eventId[id] = nil
         CharDBExecute('DELETE FROM `'..Config.customDbName..'`.`temporary_announcements` WHERE `id` = '..id..';')
     end
 end
 
-local function eS_doAnnouncement(id, delay, repeats)
-    local index = eS_returnIndex(eventId, id)
+local function tA_doAnnouncement(id, delay, repeats)
+    local index = tA_returnIndex(eventId, id)
     SendWorldMessage(announcementText[index])
     if repetitionsLeft[index] == 1 then
-        eS_deleteAnnouncement(index)
+        tA_deleteAnnouncement(index)
     else
         repetitionsLeft[index] = repetitionsLeft[index] - 1
         CharDBExecute('UPDATE `'..Config.customDbName..'`.`temporary_announcements` SET repetitions_left = '..repetitionsLeft[index]..';')
     end
 end
 
-local function eS_createAnnouncement(delayMin, repeats, text)
-    local index = eS_getFreeId()
+local function tA_createAnnouncement(delayMin, repeats, text, store, index)
+    if index == nil then
+        index = tA_getFreeId()
+    end
     local delayMs = delayMin * 60000
     repetitionsLeft[index] = repeats
     minutesBetween[index] = delayMin
     announcementText[index] = text
-    eventId[index] = CreateLuaEvent(eS_doAnnouncement, delayMs, repeats)
-    CharDBExecute('DELETE FROM `'..Config.customDbName..'`.`temporary_announcements` WHERE `id` = '..index..';')
-    CharDBExecute('INSERT INTO `'..Config.customDbName..'`.`temporary_announcements` (`id`, `repetitions_left`, `minutes_between`, `announcement_text`) VALUES ('..index..', '..repetitionsLeft[index]..', '..minutesBetween[index]..', "'..announcementText[index]..'");')
+    eventId[index] = CreateLuaEvent(tA_doAnnouncement, delayMs, repeats)
+    if store == true and repetitionsLeft[index] ~= 0 then
+        CharDBExecute('DELETE FROM `'..Config.customDbName..'`.`temporary_announcements` WHERE `id` = '..index..';')
+        CharDBExecute('INSERT INTO `'..Config.customDbName..'`.`temporary_announcements` (`id`, `repetitions_left`, `minutes_between`, `announcement_text`) VALUES ('..index..', '..repetitionsLeft[index]..', '..minutesBetween[index]..', "'..announcementText[index]..'");')
+    end
     return index
 end
 
-local function eS_command(event, player, command)
+local function tA_command(event, player, command)
     local commandArray = {}
 
-    --prevent players from using this  
-    if player:GetGMRank() < Config.GMRankForAnnouncements then
-        return
+    --prevent players from using this
+    if player ~= nil then
+        if player:GetGMRank() < Config.GMRankForAnnouncements then
+            return
+        end
     end
     
 
     -- split the command variable into several strings which can be compared individually
-    commandArray = eS_splitString(command)
+    commandArray = tA_splitString(command)
 
     if commandArray[2] ~= nil then
         commandArray[2] = commandArray[2]:gsub("[';\\, ]", "")
         if commandArray[3] ~= nil then
-            commandArray[3] = commandArray[3]:gsub("[';]", "")
+            commandArray[3] = commandArray[3]:gsub("[';\\, ]", "")
             if commandArray[4] ~= nil then
-                commandArray[4] = commandArray[4]:gsub("[;\\]", "")
+                commandArray[4] = commandArray[4]:gsub("[';]", "")
             end
         end
     end
 
-    if commandArray[1] == "tempannounce" then
-        if commandArray[2] == "print" then
-            local listOfAnnouncements = eS_listAnnouncements()
+    if commandArray[1] == "tannounce" then
+        if commandArray[2] == "list" then
+            local listOfAnnouncements = tA_listAnnouncements()
             if player == nil then
                 print(listOfAnnouncements)
             else
@@ -173,52 +167,55 @@ local function eS_command(event, player, command)
         elseif commandArray[2] == "delete" then
             if commandArray[3] ~= nil then
                 if player == nil then
-                    print("Deleting event with id: "..eS_deleteAnnouncement(commandArray[3]))
+                    print("Deleting announcement with id: "..tA_deleteAnnouncement(commandArray[3]))
                 else
-                    player:SendBroadcastMessage("Deleting event with id: "..eS_deleteAnnouncement(commandArray[3]))
+                    player:SendBroadcastMessage("Deleting announcement with id: "..tA_deleteAnnouncement(commandArray[3]))
                 end
             else
                 if player == nil then
-                    print("Invalid syntax. Expected: .tempannounce delete $id")
+                    print("Invalid syntax. Expected: tannounce delete $id")
                 else
-                    player:SendBroadcastMessage("Invalid syntax. Expected: .tempannounce delete $id")
+                    player:SendBroadcastMessage("Invalid syntax. Expected: .tannounce delete $id")
                 end
             end
             return false
         elseif commandArray[2] == nil or commandArray[3] == nil or commandArray[4] == nil then
             if player == nil then
-                print("Invalid syntax. Expected: tempannounce $delay $repetitions $text")
+                print("Invalid syntax. Expected: tannounce $delay $repetitions $text")
             else
-                player:SendBroadcastMessage("Invalid syntax. Expected: tempannounce $delay $repetitions $text")
+                player:SendBroadcastMessage("Invalid syntax. Expected: .tannounce $delay $repetitions $text")
             end
             return false
         end
 
-        local text = eS_concatRest(commandArray, 4)
+        local text = ""
+        for index,value in ipairs(commandArray) do
+            if index >= 4 then
+                text = text..commandArray[index].." "
+            end
+        end
+
 
         if player == nil then
-            print("Creating event with id: "..eS_createAnnouncement(commandArray[2],commandArray[3],text))
+            print("Creating event with id: "..tA_createAnnouncement(commandArray[2],commandArray[3],text,true))
         else
-            player:SendBroadcastMessage("Creating event with id: "..eS_createAnnouncement(commandArray[2],commandArray[3],text))
+            player:SendBroadcastMessage("Creating event with id: "..tA_createAnnouncement(commandArray[2],commandArray[3],text,true))
         end
-        
+        return false
     end
 end
 
 --on ReloadEluna / Startup
-RegisterPlayerEvent(PLAYER_EVENT_ON_COMMAND, eS_command)
+RegisterPlayerEvent(PLAYER_EVENT_ON_COMMAND, tA_command)
 
 CharDBQuery('CREATE DATABASE IF NOT EXISTS `'..Config.customDbName..'`;');
 CharDBQuery('CREATE TABLE IF NOT EXISTS `'..Config.customDbName..'`.`temporary_announcements` (`id` INT NOT NULL, `repetitions_left` INT DEFAULT 0, `minutes_between` INT Default 60, `announcement_text` varchar(255), PRIMARY KEY (`id`));');
 
 local Data_SQL = CharDBQuery('SELECT * FROM `'..Config.customDbName..'`.`temporary_announcements`;')
 if Data_SQL ~= nil then
-    local id
+    local row
     repeat
-        id = Data_SQL:GetUInt32(0)
-        repetitionsLeft[id] = Data_SQL:GetUInt32(1)
-        minutesBetween[id] = Data_SQL:GetUInt32(2)
-        announcementText[id] = Data_SQL:GetString(3)
-        eS_createAnnouncement(minutesBetween[id], repetitionsLeft[id], announcementText[id])
-        until not Data_SQL:NextRow()
+        row = Data_SQL:GetRow()
+        tA_createAnnouncement(row.minutes_between, row.repetitions_left, row.announcement_text, false, row.id)
+    until not Data_SQL:NextRow()
 end
