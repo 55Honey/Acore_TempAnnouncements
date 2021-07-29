@@ -1,8 +1,6 @@
 ## Acore_TempAnnouncements
 Lua script for Azerothcore with ElunaLUA for repeated announcements from a console/GM command.
 
-# This repo is WIP
-
 #### Find me on patreon: https://www.patreon.com/Honeys
 
 ## Requirements:
