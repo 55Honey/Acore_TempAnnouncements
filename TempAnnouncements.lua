@@ -79,15 +79,16 @@ end
 
 local function tA_listAnnouncements()
     local returnString = ""
-    local n = 0
-    if #repetitionsLeft ~= nil and #repetitionsLeft > 0 then
-        while n <= #repetitionsLeft do
-            n = n + 1
-            if repetitionsLeft[n] ~= nil then
-                returnString = returnString.." / ID:"..n.." delay: "..minutesBetween[n].." shots left: "..repetitionsLeft[n].." Text: "..announcementText[n]
+    for n = 1,255 do
+        if repetitionsLeft[n] ~= nil then
+            if repetitionsLeft[n] == 0 then
+                returnString = returnString.." / ID:"..n.." delay: "..minutesBetween[n].."min, shots left: until restart/reload, Text: "..announcementText[n]
+            else
+                returnString = returnString.." / ID:"..n.." delay: "..minutesBetween[n].."min, shots left: "..repetitionsLeft[n]..", Text: "..announcementText[n]
             end
         end
     end
+
     if returnString == "" then
         returnString = "No announcements scheduled."
     end
@@ -102,16 +103,21 @@ local function tA_deleteAnnouncement(id)
         eventId[id] = nil
         CharDBExecute('DELETE FROM `'..Config.customDbName..'`.`temporary_announcements` WHERE `id` = '..id..';')
     end
+    return id
 end
 
 local function tA_doAnnouncement(id, delay, repeats)
     local index = tA_returnIndex(eventId, id)
-    SendWorldMessage(announcementText[index])
-    if repetitionsLeft[index] == 1 then
-        tA_deleteAnnouncement(index)
-    else
-        repetitionsLeft[index] = repetitionsLeft[index] - 1
-        CharDBExecute('UPDATE `'..Config.customDbName..'`.`temporary_announcements` SET repetitions_left = '..repetitionsLeft[index]..';')
+    if announcementText[index] ~= nil then
+        SendWorldMessage(announcementText[index])
+        if repetitionsLeft[index] == 1 then
+            tA_deleteAnnouncement(index)
+        else
+            if repetitionsLeft[index] ~= 0 then
+                repetitionsLeft[index] = repetitionsLeft[index] - 1
+            end
+            CharDBExecute('UPDATE `'..Config.customDbName..'`.`temporary_announcements` SET repetitions_left = '..repetitionsLeft[index]..';')
+        end
     end
 end
 
@@ -119,7 +125,9 @@ local function tA_createAnnouncement(delayMin, repeats, text, store, index)
     if index == nil then
         index = tA_getFreeId()
     end
-    index = tostring(index)
+    if index >= 100 then
+        return "Too many active announcements"
+    end
     local delayMs = delayMin * 60000
     repetitionsLeft[index] = repeats
     minutesBetween[index] = delayMin
@@ -167,6 +175,15 @@ local function tA_command(event, player, command)
             return false
         elseif commandArray[2] == "delete" then
             if commandArray[3] ~= nil then
+                commandArray[3] = tonumber(commandArray[3])
+                if minutesBetween[commandArray[3]] == nil then
+                    if player == nil then
+                        print("There is no announcement with id: "..commandArray[3])
+                    else
+                        player:SendBroadcastMessage("There is no announcement with id: "..commandArray[3])
+                    end
+                    return false
+                end
                 if player == nil then
                     print("Deleting announcement with id: "..tA_deleteAnnouncement(commandArray[3]))
                 else
@@ -196,6 +213,8 @@ local function tA_command(event, player, command)
             end
         end
 
+        commandArray[2] = tonumber(commandArray[2])
+        commandArray[3] = tonumber(commandArray[3])
 
         if player == nil then
             print("Creating event with id: "..tA_createAnnouncement(commandArray[2],commandArray[3],text,true))
