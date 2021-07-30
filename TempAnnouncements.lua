@@ -44,6 +44,13 @@ local minutesBetween = {}                   -- time between two announcements wi
 local announcementText = {}                 -- text for the announcements
 local eventId = {}
 
+local function tA_is_numeric(x)
+    if tonumber(x) ~= nil then
+        return true
+    end
+    return false
+end
+
 local function tA_splitString(inputstr, seperator)
     if seperator == nil then
         seperator = "%s"
@@ -194,7 +201,7 @@ local function tA_command(event, player, command)
                 end
             end
             return false
-        elseif commandArray[2] == nil or commandArray[3] == nil or commandArray[4] == nil then
+        elseif commandArray[2] == nil or commandArray[3] == nil or commandArray[4] == nil or tA_is_numeric(commandArray[2]) == false or tA_is_numeric(commandArray[3]) == false then
             if player == nil then
                 print("Invalid syntax. Expected: tannounce $delay $repetitions $text")
             else
