@@ -212,7 +212,7 @@ local function tA_command(event, player, command)
 
         commandArray[2] = tonumber(commandArray[2])
         commandArray[3] = tonumber(commandArray[3])
-        text = text:gsub("[';]", "")
+        text = text:gsub("[\";]", "")
 
         if player == nil then
             print("Creating event with id: "..tA_createAnnouncement(commandArray[2],commandArray[3],text,true))

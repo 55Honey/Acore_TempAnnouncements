@@ -20,7 +20,7 @@ Use `.tannounce $limit $delay $text` to do repeated server wide announcements.
 
 `$delay` is the time between each repetition in minutes.
 
-`$text` Is the exacht text to broacast. No quotes required. Forbidden chars: [];'
+`$text` Is the exacht text to broacast. No quotes required. Forbidden chars: ;"
 
 `.tannounce list` shows all active temporary announcements
 
