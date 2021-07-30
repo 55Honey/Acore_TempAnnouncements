@@ -63,7 +63,7 @@ local function tA_splitString(inputstr, seperator)
 end
 
 local function tA_returnIndex (tab, val)
-    for index, value in pairs(tab) do
+    for index, value in ipairs(tab) do
         if value == val then
             return index
         end
@@ -123,7 +123,7 @@ local function tA_doAnnouncement(id, delay, repeats)
             if repetitionsLeft[index] ~= 0 then
                 repetitionsLeft[index] = repetitionsLeft[index] - 1
             end
-            CharDBExecute('UPDATE `'..Config.customDbName..'`.`temporary_announcements` SET repetitions_left = '..repetitionsLeft[index]..';')
+            CharDBExecute('UPDATE `'..Config.customDbName..'`.`temporary_announcements` SET repetitions_left = '..repetitionsLeft[index]..' WHERE `id` = '..index..';')
         end
     end
 end
