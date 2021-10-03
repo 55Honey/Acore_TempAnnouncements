@@ -63,7 +63,7 @@ local function tA_splitString(inputstr, seperator)
 end
 
 local function tA_returnIndex (tab, val)
-    for index, value in ipairs(tab) do
+    for index, value in pairs(tab) do
         if value == val then
             return index
         end
