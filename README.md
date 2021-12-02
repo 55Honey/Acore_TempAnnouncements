@@ -14,7 +14,7 @@ If the directory was not changed in the ElunaLua config, add the .lua script to 
 Adjust the config flags in the .lua.
 
 ## GM Usage:
-Use `.tannounce $limit $delay $text` to do repeated server wide announcements.
+Use `.tannounce $delay $limit $text` to do repeated server wide announcements.
 
 `$limit` is the amount of broadcasts. 0 means until server restart or `reload eluna`.
 
