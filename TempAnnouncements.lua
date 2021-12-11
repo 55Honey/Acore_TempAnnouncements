@@ -141,8 +141,7 @@ local function tA_createAnnouncement(delayMin, repeats, text, store, index)
     announcementText[index] = text
     eventId[index] = CreateLuaEvent(tA_doAnnouncement, delayMs, repeats)
     if store == true and repetitionsLeft[index] ~= 0 then
-        CharDBExecute('DELETE FROM `'..Config.customDbName..'`.`temporary_announcements` WHERE `id` = '..index..';')
-        CharDBExecute('INSERT INTO `'..Config.customDbName..'`.`temporary_announcements` (`id`, `repetitions_left`, `minutes_between`, `announcement_text`) VALUES ('..index..', '..repetitionsLeft[index]..', '..minutesBetween[index]..', "'..announcementText[index]..'");')
+        CharDBExecute('REPLACE INTO `'..Config.customDbName..'`.`temporary_announcements` (`id`, `repetitions_left`, `minutes_between`, `announcement_text`) VALUES ('..index..', '..repetitionsLeft[index]..', '..minutesBetween[index]..', "'..announcementText[index]..'");')
     end
     return index
 end
