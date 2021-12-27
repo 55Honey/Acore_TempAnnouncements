@@ -147,18 +147,21 @@ local function tA_createAnnouncement(delayMin, repeats, text, store, index)
 end
 
 local function tA_command(event, player, command)
-    local commandArray = {}
-
     --prevent players from using this
     if player ~= nil then
         if player:GetGMRank() < Config.GMRankForAnnouncements then
             return
         end
     end
-    
+
+    local commandArray = {}
 
     -- split the command variable into several strings which can be compared individually
     commandArray = tA_splitString(command)
+
+    if commandArray[1] ~= "tannounce" then
+        return
+    end
 
     if commandArray[2] ~= nil then
         commandArray[2] = commandArray[2]:gsub("[';\\, ]", "")
