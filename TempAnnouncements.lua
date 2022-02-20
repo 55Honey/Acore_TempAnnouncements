@@ -84,22 +84,22 @@ local function tA_getFreeId()
     return n
 end
 
-local function tA_listAnnouncements()
-    local returnString = ""
+local function tA_listAnnouncements(chatHandler)
+    local returnBool
     for n = 1,255 do
         if repetitionsLeft[n] ~= nil then
+            returnBool = true
             if repetitionsLeft[n] == 0 then
-                returnString = returnString.." / ID:"..n.." delay: "..minutesBetween[n].."min, shots left: until restart/reload, Text: "..announcementText[n]
+                chatHandler:SendSysMessage('ID:'..n..' delay: '..minutesBetween[n]..'min, shots left: until restart/reload, Text: '..announcementText[n])
             else
-                returnString = returnString.." / ID:"..n.." delay: "..minutesBetween[n].."min, shots left: "..repetitionsLeft[n]..", Text: "..announcementText[n]
+                chatHandler:SendSysMessage('ID:'..n..' delay: '..minutesBetween[n]..'min, shots left: '..repetitionsLeft[n]..', Text: '..announcementText[n])
             end
         end
     end
 
-    if returnString == "" then
-        returnString = "No announcements scheduled."
+    if returnBool ~= true then
+        chatHandler:SendSysMessage("No announcements scheduled.")
     end
-    return returnString
 end
 
 local function tA_deleteAnnouncement(id)
@@ -172,8 +172,7 @@ local function tA_command(event, player, command, chatHandler)
 
     if commandArray[1] == "tannounce" then
         if commandArray[2] == "list" then
-            local listOfAnnouncements = tA_listAnnouncements()
-            chatHandler:SendSysMessage(listOfAnnouncements)
+            tA_listAnnouncements(chatHandler)
             return false
         elseif commandArray[2] == "delete" then
             if commandArray[3] ~= nil then
