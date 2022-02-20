@@ -84,22 +84,22 @@ local function tA_getFreeId()
     return n
 end
 
-local function tA_listAnnouncements()
-    local returnString = ""
+local function tA_listAnnouncements(chatHandler)
+    local returnBool
     for n = 1,255 do
         if repetitionsLeft[n] ~= nil then
+            returnBool = true
             if repetitionsLeft[n] == 0 then
-                returnString = returnString.." / ID:"..n.." delay: "..minutesBetween[n].."min, shots left: until restart/reload, Text: "..announcementText[n]
+                chatHandler:SendSysMessage('ID:'..n..' delay: '..minutesBetween[n]..'min, shots left: until restart/reload, Text: '..announcementText[n])
             else
-                returnString = returnString.." / ID:"..n.." delay: "..minutesBetween[n].."min, shots left: "..repetitionsLeft[n]..", Text: "..announcementText[n]
+                chatHandler:SendSysMessage('ID:'..n..' delay: '..minutesBetween[n]..'min, shots left: '..repetitionsLeft[n]..', Text: '..announcementText[n])
             end
         end
     end
 
-    if returnString == "" then
-        returnString = "No announcements scheduled."
+    if returnBool ~= true then
+        chatHandler:SendSysMessage("No announcements scheduled.")
     end
-    return returnString
 end
 
 local function tA_deleteAnnouncement(id)
@@ -146,7 +146,7 @@ local function tA_createAnnouncement(delayMin, repeats, text, store, index)
     return index
 end
 
-local function tA_command(event, player, command)
+local function tA_command(event, player, command, chatHandler)
     --prevent players from using this
     if player ~= nil then
         if player:GetGMRank() < Config.GMRankForAnnouncements then
@@ -172,43 +172,22 @@ local function tA_command(event, player, command)
 
     if commandArray[1] == "tannounce" then
         if commandArray[2] == "list" then
-            local listOfAnnouncements = tA_listAnnouncements()
-            if player == nil then
-                print(listOfAnnouncements)
-            else
-                player:SendBroadcastMessage(listOfAnnouncements)
-            end
+            tA_listAnnouncements(chatHandler)
             return false
         elseif commandArray[2] == "delete" then
             if commandArray[3] ~= nil then
                 commandArray[3] = tonumber(commandArray[3])
                 if minutesBetween[commandArray[3]] == nil then
-                    if player == nil then
-                        print("There is no announcement with id: "..commandArray[3])
-                    else
-                        player:SendBroadcastMessage("There is no announcement with id: "..commandArray[3])
-                    end
+                    chatHandler:SendSysMessage("There is no announcement with id: "..commandArray[3])
                     return false
                 end
-                if player == nil then
-                    print("Deleting announcement with id: "..tA_deleteAnnouncement(commandArray[3]))
-                else
-                    player:SendBroadcastMessage("Deleting announcement with id: "..tA_deleteAnnouncement(commandArray[3]))
-                end
+                chatHandler:SendSysMessage("Deleing announcement with id: "..tA_deleteAnnouncement(commandArray[3]))
             else
-                if player == nil then
-                    print("Invalid syntax. Expected: tannounce delete $id")
-                else
-                    player:SendBroadcastMessage("Invalid syntax. Expected: .tannounce delete $id")
-                end
+                chatHandler:SendSysMessage("Invalid syntax. Expected: tannounce delete $id")
             end
             return false
         elseif commandArray[2] == nil or commandArray[3] == nil or commandArray[4] == nil or tA_is_numeric(commandArray[2]) == false or tA_is_numeric(commandArray[3]) == false then
-            if player == nil then
-                print("Invalid syntax. Expected: tannounce $delay $repetitions $text")
-            else
-                player:SendBroadcastMessage("Invalid syntax. Expected: .tannounce $delay $repetitions $text")
-            end
+            chatHandler:SendSysMessage("Invalid syntax. Expected: tannounce $delay $repetitions $text")
             return false
         end
 
@@ -223,11 +202,7 @@ local function tA_command(event, player, command)
         commandArray[3] = tonumber(commandArray[3])
         text = text:gsub("[\";]", "")
 
-        if player == nil then
-            print("Creating event with id: "..tA_createAnnouncement(commandArray[2],commandArray[3],text,true))
-        else
-            player:SendBroadcastMessage("Creating event with id: "..tA_createAnnouncement(commandArray[2],commandArray[3],text,true))
-        end
+        chatHandler:SendSysMessage("Creating event with id: "..tA_createAnnouncement(commandArray[2],commandArray[3],text,true))
         return false
     end
 end
