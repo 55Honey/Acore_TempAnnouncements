@@ -181,7 +181,7 @@ local function tA_command(event, player, command, chatHandler)
                     chatHandler:SendSysMessage("There is no announcement with id: "..commandArray[3])
                     return false
                 end
-                chatHandler:SendSysMessage("Deleing announcement with id: "..tA_deleteAnnouncement(commandArray[3]))
+                chatHandler:SendSysMessage("Deleting announcement with id: "..tA_deleteAnnouncement(commandArray[3]))
             else
                 chatHandler:SendSysMessage("Invalid syntax. Expected: tannounce delete $id")
             end
