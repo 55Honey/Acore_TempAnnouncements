@@ -27,10 +27,10 @@ Use `.tannounce $delay $limit $text` to do repeated server wide announcements.
 `.tannounce delete $id` deletes the temporary announcement
 
 ## As an example:
-`.tannounce 0 15 Hello players, we love you!`
+`.tannounce 15 0 Hello players, we love you!`
 
 will post a server wide announcement every 15min until the server restarts or eluna is reloaded.
 
-`.tannounce 24 30 Hello players, check this out!`
+`.tannounce 30 24 Hello players, check this out!`
 
 will post a server wide announcement every 30min 24 times total. The counter will go on when the server restarts. The delay restarts at 30min for the first announcement after the restart/reload.
