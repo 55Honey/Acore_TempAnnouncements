@@ -14,13 +14,11 @@ If the directory was not changed in the ElunaLua config, add the .lua script to 
 Adjust the config flags in the .lua.
 
 ## GM Usage:
-Use `.tannounce $delay $limit $text` to do repeated server wide announcements.
+Use `.tannounce $min $amount $text` to do repeated server wide announcements.
 
-`$limit` is the amount of broadcasts. 0 means until server restart or `reload eluna`.
-
-`$delay` is the time between each repetition in minutes.
-
-`$text` Is the exact text to broacast. No quotes required. Forbidden chars: `;"`
+`$min` is the time between each repetition in minutes.
+`$amount` is the amount of broadcasts. 0 means until server restart or reload eluna.
+`$text` Is the exact text to broacast. No quotes required. Forbidden chars: `[]';`
 
 `.tannounce list` shows all active temporary announcements
 
