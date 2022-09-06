@@ -15,10 +15,10 @@
 --               -  adjust config in this file
 --               -  add this script to ../lua_scripts/
 ------------------------------------------------------------------------------------------------
--- GM GUIDE:     -  Use .tannounce $limit $delay $text to do repeated server wide announcements.
---               -  $limit is the amount of broadcasts. 0 means until server restart or reload eluna.
---               -  $delay is the time between each repetition in minutes.
---               -  $text Is the exacht text to broacast. No quotes required. Forbidden chars: [';]
+-- GM GUIDE:     -  Use .tannounce $min $amount $text to do repeated server wide announcements.
+--               -  $min is the time between each repetition in minutes.
+--               -  $amount is the amount of broadcasts. 0 means until server restart or reload eluna.
+--               -  $text Is the exact text to broacast. No quotes required. Forbidden chars: []';
 ------------------------------------------------------------------------------------------------
 local Config = {}                       --general config flags
 
